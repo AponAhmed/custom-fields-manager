@@ -1,0 +1,582 @@
+/* assets/css/meta-box.css */
+
+:root {
+    --cfm-meta-primary: #2271b1;
+    --cfm-meta-primary-dark: #135e96;
+    --cfm-meta-secondary: #f6f7f7;
+    --cfm-meta-border: #c3c4c7;
+    --cfm-meta-border-light: #dcdcde;
+    --cfm-meta-text: #2c3338;
+    --cfm-meta-text-light: #50575e;
+    --cfm-meta-bg: #fff;
+    --cfm-meta-radius: 6px;
+    --cfm-meta-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --cfm-meta-transition: all 0.2s ease;
+}
+
+/* Modern Input Styles */
+.cfm-field-input,
+.cfm-field-select,
+.cfm-field-textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--cfm-meta-border);
+    border-radius: var(--cfm-meta-radius);
+    background: var(--cfm-meta-bg);
+    font-size: 14px;
+    line-height: 1.4;
+    transition: var(--cfm-meta-transition);
+    box-shadow: var(--cfm-meta-shadow);
+}
+
+.cfm-field-input:focus,
+.cfm-field-select:focus,
+.cfm-field-textarea:focus {
+    border-color: var(--cfm-meta-primary);
+    box-shadow: 0 0 0 2px rgba(34, 113, 177, 0.2);
+    outline: none;
+}
+
+.cfm-field-textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Modern Checkbox & Radio */
+.cfm-checkbox-group,
+.cfm-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cfm-checkbox-layout-horizontal,
+.cfm-radio-layout-horizontal {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.cfm-checkbox-option,
+.cfm-radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.cfm-checkbox-option input[type="checkbox"],
+.cfm-radio-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.cfm-checkbox-custom,
+.cfm-radio-custom {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--cfm-meta-border);
+    border-radius: 3px;
+    background: var(--cfm-meta-bg);
+    transition: var(--cfm-meta-transition);
+    flex-shrink: 0;
+}
+
+.cfm-radio-custom {
+    border-radius: 50%;
+}
+
+.cfm-checkbox-option input[type="checkbox"]:checked + .cfm-checkbox-custom {
+    background: var(--cfm-meta-primary);
+    border-color: var(--cfm-meta-primary);
+}
+
+.cfm-checkbox-option input[type="checkbox"]:checked + .cfm-checkbox-custom::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.cfm-radio-option input[type="radio"]:checked + .cfm-radio-custom {
+    border-color: var(--cfm-meta-primary);
+}
+
+.cfm-radio-option input[type="radio"]:checked + .cfm-radio-custom::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 8px;
+    height: 8px;
+    background: var(--cfm-meta-primary);
+    border-radius: 50%;
+}
+
+.cfm-checkbox-label,
+.cfm-radio-label {
+    font-size: 14px;
+    color: var(--cfm-meta-text);
+    user-select: none;
+}
+
+/* Hover states */
+.cfm-checkbox-option:hover .cfm-checkbox-custom,
+.cfm-radio-option:hover .cfm-radio-custom {
+    border-color: var(--cfm-meta-primary);
+}
+
+/* Focus states */
+.cfm-checkbox-option input[type="checkbox"]:focus + .cfm-checkbox-custom,
+.cfm-radio-option input[type="radio"]:focus + .cfm-radio-custom {
+    box-shadow: 0 0 0 2px rgba(34, 113, 177, 0.2);
+}
+
+/* Modern Select */
+.cfm-field-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,<svg width='20' height='20' xmlns='http://www.w3.org/2000/svg'><path d='M5 6l5 5 5-5 2 1-7 7-7-7 2-1z' fill='%2350557e'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+    padding-right: 32px;
+}
+
+.cfm-field-select[multiple] {
+    background-image: none;
+    padding-right: 12px;
+}
+
+/* File Upload Modern Style */
+.cfm-file-upload-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.cfm-file-upload-input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.cfm-file-upload-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border: 2px dashed var(--cfm-meta-border);
+    border-radius: var(--cfm-meta-radius);
+    background: var(--cfm-meta-secondary);
+    text-align: center;
+    cursor: pointer;
+    transition: var(--cfm-meta-transition);
+}
+
+.cfm-file-upload-label:hover {
+    border-color: var(--cfm-meta-primary);
+    background: #f0f6fc;
+}
+
+.cfm-file-upload-label.has-file {
+    border-style: solid;
+    border-color: var(--cfm-meta-primary);
+    background: #f0f6fc;
+}
+
+/* Repeater Field Modern Style */
+.cfm-repeater-field {
+    border: 1px solid var(--cfm-meta-border-light);
+    border-radius: var(--cfm-meta-radius);
+    overflow: hidden;
+}
+
+.cfm-repeater-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+}
+
+.cfm-repeater-item {
+    background: var(--cfm-meta-secondary);
+    border: 1px solid var(--cfm-meta-border-light);
+    border-radius: var(--cfm-meta-radius);
+    overflow: hidden;
+}
+
+.cfm-repeater-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--cfm-meta-bg);
+    border-bottom: 1px solid var(--cfm-meta-border-light);
+}
+
+.cfm-repeater-item-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--cfm-meta-text);
+}
+
+.cfm-repeater-item-fields {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+}
+
+.cfm-repeater-sub-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cfm-repeater-sub-field label {
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--cfm-meta-text);
+}
+
+/* Modern Button Styles */
+.cfm-btn-modern {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid var(--cfm-meta-border);
+    border-radius: var(--cfm-meta-radius);
+    background: var(--cfm-meta-bg);
+    color: var(--cfm-meta-text);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--cfm-meta-transition);
+}
+
+.cfm-btn-modern:hover {
+    background: var(--cfm-meta-secondary);
+    border-color: var(--cfm-meta-border);
+}
+
+.cfm-btn-modern-primary {
+    background: var(--cfm-meta-primary);
+    border-color: var(--cfm-meta-primary);
+    color: white;
+}
+
+.cfm-btn-modern-primary:hover {
+    background: var(--cfm-meta-primary-dark);
+    border-color: var(--cfm-meta-primary-dark);
+    color: white;
+}
+
+/* Grid Layout Improvements */
+.cfm-meta-box-default {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.cfm-meta-box-seamless {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    gap: 16px;
+}
+
+.cfm-meta-box-seamless .cfm-field-wrapper {
+    background: var(--cfm-meta-bg);
+    border: 1px solid var(--cfm-meta-border-light);
+    border-radius: var(--cfm-meta-radius);
+    padding: 16px;
+    box-shadow: var(--cfm-meta-shadow);
+}
+
+/* Responsive Design */
+@media (max-width: 782px) {
+    .cfm-meta-box {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .cfm-checkbox-layout-horizontal,
+    .cfm-radio-layout-horizontal {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .cfm-repeater-item-fields {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Animation for dynamic elements */
+.cfm-field-enter {
+    animation: cfmSlideIn 0.3s ease-out;
+}
+
+@keyframes cfmSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading states */
+.cfm-field-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.cfm-field-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid var(--cfm-meta-border);
+    border-top: 2px solid var(--cfm-meta-primary);
+    border-radius: 50%;
+    animation: cfmSpin 1s linear infinite;
+}
+
+@keyframes cfmSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Number Input Styles */
+.cfm-number-input-wrapper {
+    position: relative;
+    display: flex;
+}
+
+.cfm-number-input {
+    padding-right: 60px;
+}
+
+.cfm-number-controls {
+    position: absolute;
+    right: 1px;
+    top: 1px;
+    bottom: 1px;
+    display: flex;
+    flex-direction: column;
+    width: 24px;
+    border-left: 1px solid var(--cfm-meta-border);
+}
+
+.cfm-number-btn {
+    flex: 1;
+    border: none;
+    background: var(--cfm-meta-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--cfm-meta-transition);
+}
+
+.cfm-number-btn:hover {
+    background: var(--cfm-meta-border-light);
+}
+
+.cfm-number-btn:active {
+    background: var(--cfm-meta-border);
+}
+
+.cfm-number-up {
+    border-bottom: 1px solid var(--cfm-meta-border);
+}
+
+/* Date Input Styles */
+.cfm-date-input-wrapper {
+    position: relative;
+}
+
+.cfm-date-input {
+    padding-right: 40px;
+}
+
+.cfm-date-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--cfm-meta-text-light);
+    pointer-events: none;
+}
+
+.cfm-date-focused .cfm-date-icon {
+    color: var(--cfm-meta-primary);
+}
+
+/* File Upload Styles */
+.cfm-current-files,
+.cfm-current-images {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cfm-file-preview,
+.cfm-image-preview {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--cfm-meta-secondary);
+    border-radius: var(--cfm-meta-radius);
+    border: 1px solid var(--cfm-meta-border-light);
+}
+
+.cfm-file-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cfm-file-name {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.cfm-file-view {
+    color: var(--cfm-meta-primary);
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.cfm-file-view:hover {
+    text-decoration: underline;
+}
+
+.cfm-file-remove,
+.cfm-image-remove {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+/* Image Upload Styles */
+.cfm-image-upload-wrapper .cfm-image-upload-label {
+    min-height: 120px;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+
+.cfm-image-thumbnail {
+    max-width: 100px;
+    max-height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.cfm-image-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* WYSIWYG Styles */
+.cfm-wysiwyg-wrapper {
+    border: 1px solid var(--cfm-meta-border);
+    border-radius: var(--cfm-meta-radius);
+    overflow: hidden;
+}
+
+.cfm-wysiwyg-wrapper .wp-editor-container {
+    border: none;
+}
+
+/* Repeater Field Styles */
+.cfm-repeater-item-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.cfm-move-repeater-row {
+    cursor: move;
+}
+
+.cfm-repeater-sub-field-label {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--cfm-meta-text);
+    margin-bottom: 4px;
+    display: block;
+}
+
+/* Template hidden element */
+template {
+    display: none !important;
+}
+
+/* Drag and Drop for Repeater */
+.cfm-repeater-item {
+    transition: var(--cfm-meta-transition);
+}
+
+.cfm-repeater-item.sortable-ghost {
+    opacity: 0.4;
+}
+
+.cfm-repeater-item.sortable-chosen {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive Improvements */
+@media (max-width: 768px) {
+    .cfm-file-preview,
+    .cfm-image-preview {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .cfm-file-info,
+    .cfm-image-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .cfm-repeater-item-actions {
+        margin-top: 8px;
+    }
+}
+
+/* Animation for new repeater rows */
+@keyframes cfmRepeaterAppear {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 500px;
+    }
+}
+
+.cfm-repeater-item.cfm-field-enter {
+    animation: cfmRepeaterAppear 0.3s ease-out;
+}

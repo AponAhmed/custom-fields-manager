@@ -1,0 +1,54 @@
+/* Frontend Styles for Custom Fields */
+.cfm-field-row {
+    margin-bottom: 1rem;
+}
+
+.cfm-field-row label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.cfm-field-row .description {
+    font-size: 0.875rem;
+    color: #666;
+    margin-top: 0.25rem;
+    font-style: italic;
+}
+
+.cfm-repeater-field {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+.cfm-repeater-row {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 1rem;
+}
+
+.cfm-repeater-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.cfm-repeater-field-key {
+    margin-bottom: 0.5rem;
+}
+
+.cfm-repeater-field-key strong {
+    display: inline-block;
+    min-width: 100px;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .cfm-repeater-field {
+        padding: 0.5rem;
+    }
+    
+    .cfm-repeater-row {
+        padding: 0.5rem;
+    }
+}
