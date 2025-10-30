@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Plugin Name: Custom Fields Manager Pro
+ * Plugin Name: Custom Fields Manager
  * Plugin URI: https://example.com/custom-fields-manager
  * Description: Advanced custom fields management for WordPress with modern UI
  * Version: 1.0.0
