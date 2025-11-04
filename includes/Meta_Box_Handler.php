@@ -16,9 +16,10 @@ class CFM_Meta_Box_Handler
     private function __construct()
     {
         add_action('add_meta_boxes', [$this, 'add_meta_boxes']);
-        //add_action('save_post', [$this, 'save_meta_boxes'], 10, 2);
+        add_action('save_post', [$this, 'save_meta_box'], 10, 2);
         add_action('admin_head', [$this, 'add_custom_styles']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_meta_box_scripts']);
+        add_action('wp_ajax_cfm_get_attachment_url', [$this, 'ajax_get_attachment_url']);
     }
 
     public function enqueue_meta_box_scripts($hook)
@@ -34,10 +35,14 @@ class CFM_Meta_Box_Handler
             CFM_VERSION
         );
 
+        // Enqueue WordPress media scripts
+        wp_enqueue_media();
+        wp_enqueue_script('jquery-ui-sortable');
+
         wp_enqueue_script(
             'cfm-meta-box',
             CFM_PLUGIN_URL . 'assets/js/meta-box.js',
-            ['jquery'],
+            ['jquery', 'jquery-ui-sortable'],
             CFM_VERSION,
             true
         );
@@ -46,6 +51,8 @@ class CFM_Meta_Box_Handler
         wp_localize_script('cfm-meta-box', 'cfmMetaBox', [
             'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('cfm_meta_box_nonce'),
+            'media_frame_title' => __('Select or Upload Media', 'custom-fields-manager'),
+            'media_frame_button' => __('Use this media', 'custom-fields-manager'),
             'i18n' => [
                 'chooseFile' => __('Choose File', 'custom-fields-manager'),
                 'chooseFiles' => __('Choose Files', 'custom-fields-manager'),
@@ -62,15 +69,15 @@ class CFM_Meta_Box_Handler
 
     public function add_meta_boxes()
     {
-        $post_id = get_the_ID();
+        global $post;
 
-        if (!$post_id) {
+        if (!$post || !$post->ID) {
             return;
         }
 
         $context = [
-            'post_id' => $post_id,
-            'post_type' => get_post_type($post_id)
+            'post_id' => $post->ID,
+            'post_type' => $post->post_type
         ];
 
         $field_groups = CFM_Field_Group_Repository::instance()->get_by_location($context);
@@ -83,7 +90,7 @@ class CFM_Meta_Box_Handler
                 'cfm-' . $field_group->get_key(),
                 $field_group->get_title(),
                 [$this, 'render_meta_box'],
-                null,
+                $post->post_type,
                 $position,
                 'default',
                 [
@@ -127,7 +134,7 @@ class CFM_Meta_Box_Handler
 
         // Grid template
         if ($template === 'auto') {
-            $styles[] = 'grid-template-columns: repeat(auto-fit, minmax(250px, 1fr))';
+            $styles[] = 'grid-template-columns: repeat(auto-fit, minmax(400px, 1fr))';
         } else {
             $styles[] = 'grid-template-columns: ' . esc_attr($template);
         }
@@ -447,59 +454,54 @@ class CFM_Meta_Box_Handler
     private function render_media_input($post_id, $field, $value, $field_id, $field_name, $options)
     {
         $multiple = !empty($options['multiple']) ? 'multiple' : '';
-        $allowed_types = !empty($options['allowed_types']) ? esc_attr($options['allowed_types']) : 'jpg,jpeg,png,gif,pdf,doc,docx';
+        $allowed_types = !empty($options['allowed_types']) ? esc_attr($options['allowed_types']) : '';
         $library = !empty($options['library']) ? esc_attr($options['library']) : 'all';
+        $current_media = !empty($value) ? (is_array($value) ? $value : [$value]) : [];
 
-        echo '<div class="cfm-media-upload-wrapper">';
+        echo '<div class="cfm-media-upload-wrapper" data-field-id="' . esc_attr($field_id) . '" data-multiple="' . esc_attr($multiple) . '">';
         echo '<input type="hidden" 
                      id="' . esc_attr($field_id) . '" 
                      name="' . $field_name . '" 
-                     value="' . esc_attr($value) . '" 
+                     value="' . esc_attr(is_array($value) ? implode(',', $value) : $value) . '" 
                      class="cfm-media-hidden-input">';
 
         echo '<div class="cfm-media-upload-controls">';
-        echo '<button type="button" class="cfm-btn-modern cfm-media-upload-btn">';
+        echo '<button type="button" class="cfm-btn-modern cfm-media-upload-btn" data-field="' . esc_attr($field_id) . '">';
         echo '<span class="dashicons dashicons-admin-media"></span>';
         echo $multiple ? __('Choose Files', 'custom-fields-manager') : __('Choose File', 'custom-fields-manager');
         echo '</button>';
 
         if (!empty($value)) {
-            echo '<button type="button" class="cfm-btn-modern cfm-btn-danger cfm-media-remove-btn">';
+            echo '<button type="button" class="cfm-btn-modern cfm-btn-danger cfm-media-remove-all-btn" data-field="' . esc_attr($field_id) . '">';
             echo '<span class="dashicons dashicons-no"></span>';
-            echo __('Remove', 'custom-fields-manager');
+            echo __('Remove All', 'custom-fields-manager');
             echo '</button>';
         }
         echo '</div>';
 
         // Show current media preview
-        if (!empty($value)) {
-            echo '<div class="cfm-media-preview">';
-            $this->render_media_preview($value, $field, $options);
+        if (!empty($current_media)) {
+            echo '<div class="cfm-media-preview" id="' . esc_attr($field_id) . '-preview">';
+            foreach ($current_media as $media_url) {
+                if (!empty($media_url)) {
+                    $this->render_single_media_preview($media_url, $field_id);
+                }
+            }
             echo '</div>';
         }
         echo '</div>';
     }
 
-    private function render_media_preview($value, $field, $options)
+    private function render_single_media_preview($media_url, $field_id)
     {
-        if (is_array($value)) {
-            foreach ($value as $media_url) {
-                $this->render_single_media_preview($media_url, $field, $options);
-            }
-        } else {
-            $this->render_single_media_preview($value, $field, $options);
-        }
-    }
+        $media_id = attachment_url_to_postid($media_url);
+        $is_image = wp_attachment_is_image($media_id);
 
-    private function render_single_media_preview($media_url, $field, $options)
-    {
-        $file_type = wp_check_filetype($media_url);
-        $is_image = in_array($file_type['ext'], ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+        echo '<div class="cfm-media-preview-item" data-url="' . esc_attr($media_url) . '">';
 
-        echo '<div class="cfm-media-preview-item">';
-
-        if ($is_image) {
-            echo '<img src="' . esc_url($media_url) . '" alt="" class="cfm-media-thumbnail">';
+        if ($is_image && $media_id) {
+            $image_thumb = wp_get_attachment_image_url($media_id, 'thumbnail');
+            echo '<img src="' . esc_url($image_thumb ?: $media_url) . '" alt="" class="cfm-media-thumbnail">';
         } else {
             echo '<div class="cfm-media-file-icon">';
             echo '<span class="dashicons dashicons-media-document"></span>';
@@ -509,6 +511,7 @@ class CFM_Meta_Box_Handler
 
         echo '<div class="cfm-media-actions">';
         echo '<a href="' . esc_url($media_url) . '" target="_blank" class="cfm-btn-modern cfm-media-view">' . __('View', 'custom-fields-manager') . '</a>';
+        echo '<button type="button" class="cfm-btn-modern cfm-btn-danger cfm-media-remove-btn" data-field="' . esc_attr($field_id) . '" data-url="' . esc_attr($media_url) . '">' . __('Remove', 'custom-fields-manager') . '</button>';
         echo '</div>';
         echo '</div>';
     }
@@ -520,8 +523,13 @@ class CFM_Meta_Box_Handler
             'textarea_rows' => !empty($options['rows']) ? intval($options['rows']) : 10,
             'editor_height' => !empty($options['height']) ? intval($options['height']) : 300,
             'media_buttons' => !empty($options['media_upload']) ? true : false,
-            'teeny' => !empty($options['toolbar']) && $options['toolbar'] === 'basic' ? true : false,
-            'quicktags' => !empty($options['toolbar']) && $options['toolbar'] === 'basic' ? false : true,
+            'editor_class' => 'cfm-wysiwyg-editor',
+            'tinymce' => [
+                'wp_autoresize_on' => true,
+                'toolbar1' => 'formatselect,bold,italic,bullist,numlist,blockquote,alignleft,aligncenter,alignright,link,unlink,wp_adv',
+                'toolbar2' => 'strikethrough,hr,forecolor,pastetext,removeformat,charmap,outdent,indent,undo,redo,wp_help'
+            ],
+            'quicktags' => true
         ];
 
         echo '<div class="cfm-wysiwyg-wrapper">';
@@ -577,13 +585,13 @@ class CFM_Meta_Box_Handler
         echo '</div>';
 
         // Add row button
-        echo '<button type="button" class="cfm-btn-modern-primary cfm-add-repeater-row">';
+        echo '<button type="button" data-field-name="' . esc_attr($field['name']) . '" class="cfm-btn-modern-primary cfm-add-repeater-row">';
         echo '<span class="dashicons dashicons-plus"></span>';
         echo esc_html($options['button_label'] ?? __('Add Row', 'custom-fields-manager'));
         echo '</button>';
 
-        // Empty state template (hidden)
-        echo '<template id="cfm-repeater-template-' . esc_attr($field['key']) . '">';
+        // Template for new rows
+        echo '<template id="cfm-repeater-template-' . esc_attr($field['name']) . '">';
         echo '<div class="cfm-repeater-item">';
         echo '<div class="cfm-repeater-item-header">';
         echo '<span class="cfm-repeater-item-title">' . __('New Row', 'custom-fields-manager') . '</span>';
@@ -617,7 +625,7 @@ class CFM_Meta_Box_Handler
         echo '</div>';
     }
 
-    private function render_sub_field_input($sub_field, $value, $field_id = '', $field_name, $is_template = false)
+    private function render_sub_field_input($sub_field, $value, $field_id = '', $field_name = '', $is_template = false)
     {
         $options = $sub_field['options'] ?? [];
 
@@ -670,15 +678,22 @@ class CFM_Meta_Box_Handler
                 break;
 
             case 'media':
-                echo '<div class="cfm-media-upload-wrapper">';
+                $media_field_id = $field_id . '-media';
+                echo '<div class="cfm-media-upload-wrapper" data-field-id="' . esc_attr($media_field_id) . '">';
                 echo '<input type="hidden" 
                              name="' . $field_name . '" 
                              value="' . esc_attr($value) . '" 
                              class="cfm-media-hidden-input">';
-                echo '<button type="button" class="cfm-btn-modern cfm-media-upload-btn">';
+                echo '<button type="button" class="cfm-btn-modern cfm-media-upload-btn" data-field="' . esc_attr($media_field_id) . '">';
                 echo '<span class="dashicons dashicons-admin-media"></span>';
                 echo __('Choose File', 'custom-fields-manager');
                 echo '</button>';
+
+                if (!empty($value)) {
+                    echo '<div class="cfm-media-preview">';
+                    $this->render_single_media_preview($value, $media_field_id);
+                    echo '</div>';
+                }
                 echo '</div>';
                 break;
 
@@ -726,6 +741,24 @@ class CFM_Meta_Box_Handler
         return $choices;
     }
 
+    public function ajax_get_attachment_url()
+    {
+        check_ajax_referer('cfm_meta_box_nonce', 'nonce');
+
+        if (!current_user_can('upload_files')) {
+            wp_die(-1);
+        }
+
+        $attachment_id = intval($_POST['attachment_id']);
+        $url = wp_get_attachment_url($attachment_id);
+
+        if ($url) {
+            wp_send_json_success(['url' => $url]);
+        } else {
+            wp_send_json_error(['message' => __('Failed to get attachment URL', 'custom-fields-manager')]);
+        }
+    }
+
     public function save_meta_box($post_id)
     {
         // Check nonce
@@ -765,12 +798,6 @@ class CFM_Meta_Box_Handler
                 }
             }
         }
-
-        // Handle file uploads
-        $this->handle_file_uploads($post_id);
-
-        // Handle file removals
-        $this->handle_file_removals($post_id);
     }
 
     private function sanitize_field_value($field_name, $value)
@@ -782,61 +809,8 @@ class CFM_Meta_Box_Handler
         return sanitize_text_field($value);
     }
 
-    private function handle_file_uploads($post_id)
-    {
-        if (!empty($_FILES['cfm_files']) && is_array($_FILES['cfm_files'])) {
-            require_once(ABSPATH . 'wp-admin/includes/file.php');
-            require_once(ABSPATH . 'wp-admin/includes/media.php');
-            require_once(ABSPATH . 'wp-admin/includes/image.php');
-
-            foreach ($_FILES['cfm_files']['name'] as $field_name => $filename) {
-                $file = [
-                    'name' => $_FILES['cfm_files']['name'][$field_name],
-                    'type' => $_FILES['cfm_files']['type'][$field_name],
-                    'tmp_name' => $_FILES['cfm_files']['tmp_name'][$field_name],
-                    'error' => $_FILES['cfm_files']['error'][$field_name],
-                    'size' => $_FILES['cfm_files']['size'][$field_name]
-                ];
-
-                if ($file['error'] === 0) {
-                    $upload = wp_handle_upload($file, ['test_form' => false]);
-
-                    if (!isset($upload['error'])) {
-                        $current_value = get_post_meta($post_id, $field_name, true);
-
-                        if (is_array($current_value)) {
-                            $current_value[] = $upload['url'];
-                            update_post_meta($post_id, $field_name, $current_value);
-                        } else {
-                            update_post_meta($post_id, $field_name, $upload['url']);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private function handle_file_removals($post_id)
-    {
-        if (!empty($_POST['cfm_remove_file']) && is_array($_POST['cfm_remove_file'])) {
-            foreach ($_POST['cfm_remove_file'] as $field_name => $files_to_remove) {
-                if (is_array($files_to_remove)) {
-                    $current_value = get_post_meta($post_id, $field_name, true);
-
-                    if (is_array($current_value)) {
-                        $new_value = array_diff($current_value, $files_to_remove);
-                        update_post_meta($post_id, $field_name, $new_value);
-                    } else {
-                        delete_post_meta($post_id, $field_name);
-                    }
-                }
-            }
-        }
-    }
-
     public function add_custom_styles()
     {
-        // Inline styles for meta boxes
         echo '<style>
             .cfm-meta-box {
                 display: grid;
@@ -851,6 +825,7 @@ class CFM_Meta_Box_Handler
                 display: block;
                 font-weight: 600;
                 font-size: 14px;
+                margin-bottom: 8px;
             }
             
             .cfm-required-asterisk {
@@ -862,6 +837,24 @@ class CFM_Meta_Box_Handler
                 font-size: 12px;
                 color: #666;
                 font-style: italic;
+            }
+
+            /* Fix for WYSIWYG editor in meta boxes */
+            .cfm-wysiwyg-wrapper .wp-editor-container {
+                border: 1px solid #ddd;
+            }
+            
+            .cfm-wysiwyg-wrapper .wp-editor-tabs {
+                background: #f7f7f7;
+            }
+            
+            /* Fix for media modal */
+            .media-modal {
+                z-index: 160000 !important;
+            }
+            
+            .media-modal-backdrop {
+                z-index: 159999 !important;
             }
         </style>';
     }

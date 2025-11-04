@@ -157,7 +157,7 @@ class CFMFieldManager {
 
         window.cfmFieldGroup.fields.forEach((fieldData, index) => {
             const fieldElement = this.addField(fieldData, index);
-            
+
             // Initialize sub-fields if they exist
             if (fieldData.sub_fields && fieldData.sub_fields.length > 0) {
                 fieldData.sub_fields.forEach((subFieldData, subIndex) => {
@@ -377,7 +377,7 @@ class CFMFieldManager {
     getSubFieldHTML(parentIndex, subIndex, data, isRepeaterParent = false) {
         // Only make sub-fields required if parent field is a repeater
         const requiredAttr = isRepeaterParent ? 'required' : '';
-        
+
         return `
             <div class="cfm-sub-field" data-index="${subIndex}">
                 <div class="cfm-sub-field-header">
@@ -487,7 +487,7 @@ class CFMFieldManager {
         const parentField = subFieldElement.closest('.cfm-field');
         const parentType = parentField?.querySelector('.cfm-field-type-select')?.value;
         const isRepeaterParent = parentType === 'repeater';
-        
+
         const labelInput = subFieldElement.querySelector('.cfm-sub-field-label-input');
         const nameInput = subFieldElement.querySelector('.cfm-sub-field-name-input');
 
@@ -630,13 +630,13 @@ class CFMFieldManager {
                     default: 'jpg,jpeg,png,gif,pdf,doc,docx',
                     placeholder: 'jpg,png,pdf,doc'
                 },
-                {
-                    name: 'max_size',
-                    label: 'Max File Size (MB)',
-                    type: 'number',
-                    default: 2,
-                    min: 0
-                }
+                // {
+                //     name: 'max_size',
+                //     label: 'Max File Size (MB)',
+                //     type: 'number',
+                //     default: 2,
+                //     min: 0
+                // }
             ]
         };
 
@@ -903,11 +903,11 @@ class CFMFieldManager {
         editors.forEach(editor => {
             const textarea = editor.querySelector('.cfm-choices-textarea');
             const preview = editor.querySelector('.cfm-choices-list');
-            
+
             const updatePreview = () => {
                 const value = textarea.value;
                 const choices = this.parseChoices(value);
-                preview.innerHTML = choices.map(choice => 
+                preview.innerHTML = choices.map(choice =>
                     `<div class="cfm-choice-item"><code>${choice.value}</code>: ${choice.label}</div>`
                 ).join('');
             };
@@ -942,7 +942,7 @@ class CFMFieldManager {
             tab.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 const targetPanel = tab.dataset.tab;
 
                 // Update tabs
@@ -1069,7 +1069,7 @@ class CFMFieldManager {
 
         if (optionsContent && toggleBtn) {
             const isVisible = optionsContent.style.display === 'block';
-            
+
             if (isVisible) {
                 optionsContent.style.display = 'none';
                 toggleBtn.classList.remove('active');
@@ -1088,7 +1088,7 @@ class CFMFieldManager {
 
         if (optionsContent && toggleBtn) {
             const isVisible = optionsContent.style.display === 'block';
-            
+
             if (isVisible) {
                 optionsContent.style.display = 'none';
                 toggleBtn.classList.remove('active');
@@ -1119,7 +1119,7 @@ class CFMFieldManager {
         if (subFieldsSection) {
             const isRepeater = fieldType === 'repeater';
             subFieldsSection.style.display = isRepeater ? 'block' : 'none';
-            
+
             // Update required attributes for all sub-fields
             const subFields = fieldElement.querySelectorAll('.cfm-sub-field');
             subFields.forEach(subField => {
@@ -1195,7 +1195,7 @@ class CFMFieldManager {
         };
 
         const subFieldHTML = this.getSubFieldHTML(parentIndex, actualSubIndex, subFieldData, isRepeaterParent);
-        
+
         if (subIndex !== null && subIndex < container.children.length) {
             const existingSubField = container.children[subIndex];
             existingSubField.insertAdjacentHTML('beforebegin', subFieldHTML);
@@ -1488,13 +1488,13 @@ class CFMFormHandler {
     validateRepeaterFields() {
         let hasErrors = false;
         const repeaterFields = this.form.querySelectorAll('.cfm-field-type-select');
-        
+
         repeaterFields.forEach(select => {
             if (select.value === 'repeater') {
                 const fieldElement = select.closest('.cfm-field');
                 const subFieldsContainer = fieldElement.querySelector('.cfm-sub-fields-container');
                 const subFields = subFieldsContainer.querySelectorAll('.cfm-sub-field');
-                
+
                 if (subFields.length === 0) {
                     hasErrors = true;
                     alert('Repeater fields must have at least one sub-field');
@@ -1505,7 +1505,7 @@ class CFMFormHandler {
                 subFields.forEach(subField => {
                     const labelInput = subField.querySelector('.cfm-sub-field-label-input');
                     const nameInput = subField.querySelector('.cfm-sub-field-name-input');
-                    
+
                     if (!labelInput.value.trim() || !nameInput.value.trim()) {
                         hasErrors = true;
                         alert('All sub-fields in repeater must have both label and name');

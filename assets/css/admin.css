@@ -30,8 +30,13 @@
 .cfm-header {
     background: var(--cfm-bg);
     border-bottom: 1px solid var(--cfm-border-light);
-    margin: -20px -20px 20px;
-    padding: 20px;
+    margin: -10px -20px 22px;
+    padding: 12px;
+}
+
+.cfm-header h1 {
+    font-weight: 300;
+    padding: 0;
 }
 
 .cfm-header-content {
@@ -419,6 +424,7 @@
     padding: 12px 20px;
     border-top: 1px solid var(--cfm-border-light);
     background: var(--cfm-bg-light);
+    border-radius: 0 0 4px 4px;
 }
 
 /* Dropdown */
