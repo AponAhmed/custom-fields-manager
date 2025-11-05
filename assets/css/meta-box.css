@@ -1,5 +1,3 @@
-/* assets/css/meta-box.css */
-
 :root {
     --cfm-meta-primary: #2271b1;
     --cfm-meta-primary-dark: #135e96;
@@ -12,6 +10,106 @@
     --cfm-meta-radius: 6px;
     --cfm-meta-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     --cfm-meta-transition: all 0.2s ease;
+}
+
+/* Table Repeater Styles */
+.cfm-repeater-table {
+    border: 1px solid var(--cfm-meta-border);
+    border-spacing: 0;
+    margin-bottom: 10px;
+    background: var(--cfm-meta-bg);
+    border-radius: var(--cfm-meta-radius);
+    overflow: hidden;
+    box-shadow: var(--cfm-meta-shadow);
+}
+
+.cfm-repeater-table th {
+    background: var(--cfm-meta-secondary);
+    border-bottom: 1px solid var(--cfm-meta-border);
+    padding: 12px;
+    font-weight: 600;
+    text-align: left;
+    font-size: 13px;
+    color: var(--cfm-meta-text);
+}
+
+.cfm-repeater-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--cfm-meta-border-light);
+    vertical-align: top;
+    background: var(--cfm-meta-bg);
+    vertical-align: middle;
+}
+
+.cfm-repeater-table tr:last-child td {
+    border-bottom: none;
+}
+
+.cfm-repeater-table .cfm-repeater-sort {
+    width: 30px;
+    text-align: center;
+    padding: 12px 8px;
+}
+
+.cfm-repeater-table .cfm-repeater-actions {
+    width: 80px;
+    text-align: center;
+    padding: 12px 8px;
+}
+
+.cfm-drag-handle {
+    color: var(--cfm-meta-text-light);
+    cursor: move;
+    opacity: 0.6;
+    transition: var(--cfm-meta-transition);
+}
+
+.cfm-drag-handle:hover {
+    color: var(--cfm-meta-primary);
+    opacity: 1;
+}
+
+.cfm-repeater-actions-bottom {
+    margin-top: 10px;
+    text-align: left;
+}
+
+/* Table input styles */
+.cfm-repeater-table input[type="text"],
+.cfm-repeater-table textarea,
+.cfm-repeater-table select {
+    width: 100%;
+    max-width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--cfm-meta-border);
+    border-radius: 3px;
+    font-size: 13px;
+    transition: var(--cfm-meta-transition);
+}
+
+.cfm-repeater-table input[type="text"]:focus,
+.cfm-repeater-table textarea:focus,
+.cfm-repeater-table select:focus {
+    border-color: var(--cfm-meta-primary);
+    box-shadow: 0 0 0 1px var(--cfm-meta-primary);
+    outline: none;
+}
+
+/* Sortable table styles */
+.cfm-repeater-table-placeholder {
+    background: var(--cfm-meta-secondary);
+    border: 2px dashed var(--cfm-meta-border);
+    height: 60px;
+}
+
+.cfm-repeater-item.sortable-ghost {
+    opacity: 0.4;
+    background: var(--cfm-meta-secondary);
+}
+
+.cfm-repeater-item.sortable-chosen {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: var(--cfm-meta-bg);
 }
 
 /* Modern Input Styles */
@@ -193,12 +291,8 @@
     background: #f0f6fc;
 }
 
-/* Repeater Field Modern Style */
-
+/* Original Repeater Field Styles (for backward compatibility) */
 .cfm-repeater-items {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
     padding: 16px;
 }
 
@@ -230,11 +324,7 @@
     padding: 16px;
 }
 
-.cfm-repeater-sub-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
+
 
 .cfm-repeater-sub-field label {
     font-weight: 500;
@@ -281,6 +371,12 @@
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
+.cfm-meta-box.cfm-meta-box-default {
+    padding: 18px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+}
+
 .cfm-meta-box-seamless {
     background: transparent;
     border: none;
@@ -311,6 +407,18 @@
     .cfm-repeater-item-fields {
         grid-template-columns: 1fr;
     }
+
+    /* Make table responsive */
+    .cfm-repeater-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .cfm-repeater-table th,
+    .cfm-repeater-table td {
+        min-width: 150px;
+    }
 }
 
 /* Animation for dynamic elements */
@@ -327,6 +435,22 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+.cfm-field-exit {
+    animation: cfmSlideOut 0.3s ease-out;
+}
+
+@keyframes cfmSlideOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
     }
 }
 
@@ -497,10 +621,6 @@
     gap: 8px;
 }
 
-/* WYSIWYG Styles */
-
-
-
 /* Repeater Field Styles */
 .cfm-repeater-item-actions {
     display: flex;
@@ -524,17 +644,10 @@ template {
     display: none !important;
 }
 
-/* Drag and Drop for Repeater */
-.cfm-repeater-item {
-    transition: var(--cfm-meta-transition);
-}
-
-.cfm-repeater-item.sortable-ghost {
-    opacity: 0.4;
-}
-
-.cfm-repeater-item.sortable-chosen {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+/* Required field indicator */
+.cfm-required-asterisk {
+    color: #d63638;
+    font-weight: bold;
 }
 
 /* Responsive Improvements */
@@ -556,23 +669,4 @@ template {
     .cfm-repeater-item-actions {
         margin-top: 8px;
     }
-}
-
-/* Animation for new repeater rows */
-@keyframes cfmRepeaterAppear {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-        max-height: 0;
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-        max-height: 500px;
-    }
-}
-
-.cfm-repeater-item.cfm-field-enter {
-    animation: cfmRepeaterAppear 0.3s ease-out;
 }

@@ -4,6 +4,7 @@
 class CFM_Meta_Box_Handler
 {
     private static $instance = null;
+    private $fieldGroup;
 
     public static function instance()
     {
@@ -107,16 +108,23 @@ class CFM_Meta_Box_Handler
         $style = $metabox['args']['style'];
         $fields = $field_group->get_fields();
 
+        // Get all field group data from single meta field
+        $field_group_data = get_post_meta($post->ID, '_cfm_' . $field_group->get_key(), true);
+        if (!is_array($field_group_data)) {
+            $field_group_data = [];
+        }
+
         $grid_styles = $this->get_field_group_grid_styles($field_group);
 
         echo '<div class="cfm-meta-box cfm-meta-box-' . esc_attr($style) . '" style="' . esc_attr($grid_styles) . '">';
 
         foreach ($fields as $field) {
-            $this->render_field($post->ID, $field, $field_group);
+            // Get field value from field group data
+            $value = $field_group_data[$field['name']] ?? '';
+            $this->render_field($post->ID, $field, $field_group, $value);
         }
 
         echo '</div>';
-
         wp_nonce_field('cfm_save_meta_box', 'cfm_meta_box_nonce');
     }
 
@@ -134,7 +142,7 @@ class CFM_Meta_Box_Handler
 
         // Grid template
         if ($template === 'auto') {
-            $styles[] = 'grid-template-columns: repeat(auto-fit, minmax(400px, 1fr))';
+            $styles[] = 'grid-template-columns: repeat(auto-fit, minmax(7%, 1fr))';
         } else {
             $styles[] = 'grid-template-columns: ' . esc_attr($template);
         }
@@ -175,9 +183,9 @@ class CFM_Meta_Box_Handler
         return [];
     }
 
-    private function render_field($post_id, $field, $field_group)
+    private function render_field($post_id, $field, $field_group, $value = '')
     {
-        $value = get_post_meta($post_id, $field['name'], true);
+        $this->fieldGroup = $field_group;
         $field_id = 'cfm-' . $field['key'];
         $options = $field['options'] ?? [];
 
@@ -215,10 +223,12 @@ class CFM_Meta_Box_Handler
 
     private function calculate_grid_span($width)
     {
-        if ($width <= 25) return 1;
-        if ($width <= 50) return 2;
-        if ($width <= 75) return 3;
-        return 4; // 100%
+        if ($width <= 25) return 3;
+        if ($width <= 33) return 4;
+        if ($width <= 50) return 6;
+        if ($width <= 66) return 8;
+        if ($width <= 75) return 9;
+        return 12; // 100%
     }
 
     private function render_field_label($field, $field_id)
@@ -235,7 +245,7 @@ class CFM_Meta_Box_Handler
 
     private function render_field_input($post_id, $field, $value, $field_id)
     {
-        $field_name = 'cfm[' . esc_attr($field['name']) . ']';
+        $field_name = 'cfm[' . $this->fieldGroup->get_key() . '][' . esc_attr($field['name']) . ']';
         $options = $field['options'] ?? [];
 
         echo '<div class="cfm-field-input-wrapper">';
@@ -518,23 +528,9 @@ class CFM_Meta_Box_Handler
 
     private function render_wysiwyg($field, $value, $field_id, $field_name, $options)
     {
-        $editor_settings = [
-            'textarea_name' => $field_name,
-            'textarea_rows' => !empty($options['rows']) ? intval($options['rows']) : 10,
-            'editor_height' => !empty($options['height']) ? intval($options['height']) : 300,
-            'media_buttons' => !empty($options['media_upload']) ? true : false,
-            'editor_class' => 'cfm-wysiwyg-editor',
-            'tinymce' => [
-                'wp_autoresize_on' => true,
-                'toolbar1' => 'formatselect,bold,italic,bullist,numlist,blockquote,alignleft,aligncenter,alignright,link,unlink,wp_adv',
-                'toolbar2' => 'strikethrough,hr,forecolor,pastetext,removeformat,charmap,outdent,indent,undo,redo,wp_help'
-            ],
-            'quicktags' => true
-        ];
-
-        echo '<div class="cfm-wysiwyg-wrapper">';
-        wp_editor($value, $field_id, $editor_settings);
-        echo '</div>';
+        // Usage example:
+        $wysiwyg_handler = new CFM_Gutenberg_WYSIWYG();
+        $wysiwyg_handler->render_wysiwyg($field, $value, $field_id, $field_name, $options);
     }
 
     private function render_repeater_field($post_id, $field, $value)
@@ -544,82 +540,99 @@ class CFM_Meta_Box_Handler
         $options = $field['options'] ?? [];
 
         echo '<div class="cfm-repeater-field" data-field-name="' . esc_attr($field['name']) . '">';
-        echo '<div class="cfm-repeater-items">';
 
-        foreach ($repeater_data as $index => $row) {
-            echo '<div class="cfm-repeater-item">';
-            echo '<div class="cfm-repeater-item-header">';
-            echo '<span class="cfm-repeater-item-title">' . sprintf(__('Row %d', 'custom-fields-manager'), $index + 1) . '</span>';
-            echo '<div class="cfm-repeater-item-actions">';
-            echo '<button type="button" class="cfm-btn-modern cfm-move-repeater-row" title="' . __('Move', 'custom-fields-manager') . '">';
-            echo '<span class="dashicons dashicons-move"></span>';
-            echo '</button>';
-            echo '<button type="button" class="cfm-btn-modern cfm-remove-repeater-row" title="' . __('Remove', 'custom-fields-manager') . '">';
-            echo '<span class="dashicons dashicons-no"></span>';
-            echo '</button>';
-            echo '</div>';
-            echo '</div>';
+        // Repeater table
+        echo '<table class="cfm-repeater-table widefat">';
+        echo '<thead>';
+        echo '<tr>';
 
-            echo '<div class="cfm-repeater-item-fields">';
-            foreach ($sub_fields as $sub_field) {
-                $sub_value = $row[$sub_field['name']] ?? '';
-                $sub_field_id = 'cfm-' . $field['key'] . '-' . $index . '-' . $sub_field['key'];
+        // Add drag handle column if sorting is enabled
+        echo '<th class="cfm-repeater-sort"></th>';
 
-                echo '<div class="cfm-repeater-sub-field">';
-                echo '<label for="' . esc_attr($sub_field_id) . '" class="cfm-repeater-sub-field-label">';
-                echo esc_html($sub_field['label']);
-                if (!empty($sub_field['required'])) {
-                    echo ' <span class="cfm-required-asterisk">*</span>';
-                }
-                echo '</label>';
-
-                $sub_field_name = 'cfm[' . esc_attr($field['name']) . '][' . $index . '][' . esc_attr($sub_field['name']) . ']';
-
-                $this->render_sub_field_input($sub_field, $sub_value, $sub_field_id, $sub_field_name);
-                echo '</div>';
-            }
-            echo '</div>';
-            echo '</div>';
-        }
-
-        echo '</div>';
-
-        // Add row button
-        echo '<button type="button" data-field-name="' . esc_attr($field['name']) . '" class="cfm-btn-modern-primary cfm-add-repeater-row">';
-        echo '<span class="dashicons dashicons-plus"></span>';
-        echo esc_html($options['button_label'] ?? __('Add Row', 'custom-fields-manager'));
-        echo '</button>';
-
-        // Template for new rows
-        echo '<template id="cfm-repeater-template-' . esc_attr($field['name']) . '">';
-        echo '<div class="cfm-repeater-item">';
-        echo '<div class="cfm-repeater-item-header">';
-        echo '<span class="cfm-repeater-item-title">' . __('New Row', 'custom-fields-manager') . '</span>';
-        echo '<div class="cfm-repeater-item-actions">';
-        echo '<button type="button" class="cfm-btn-modern cfm-move-repeater-row" title="' . __('Move', 'custom-fields-manager') . '">';
-        echo '<span class="dashicons dashicons-move"></span>';
-        echo '</button>';
-        echo '<button type="button" class="cfm-btn-modern cfm-remove-repeater-row" title="' . __('Remove', 'custom-fields-manager') . '">';
-        echo '<span class="dashicons dashicons-no"></span>';
-        echo '</button>';
-        echo '</div>';
-        echo '</div>';
-        echo '<div class="cfm-repeater-item-fields">';
-        foreach ($sub_fields as $sub_index => $sub_field) {
-            echo '<div class="cfm-repeater-sub-field">';
-            echo '<label class="cfm-repeater-sub-field-label">';
+        // Table headers for each sub field
+        foreach ($sub_fields as $sub_field) {
+            echo '<th class="cfm-repeater-sub-field-header">';
             echo esc_html($sub_field['label']);
             if (!empty($sub_field['required'])) {
                 echo ' <span class="cfm-required-asterisk">*</span>';
             }
-            echo '</label>';
-
-            $sub_field_name = 'cfm[' . esc_attr($field['name']) . '][__INDEX__][' . esc_attr($sub_field['name']) . ']';
-            $this->render_sub_field_input($sub_field, '', '', $sub_field_name, true);
-            echo '</div>';
+            echo '</th>';
         }
+
+        // Actions column
+        echo '<th class="cfm-repeater-actions">' . __('Actions', 'custom-fields-manager') . '</th>';
+        echo '</tr>';
+        echo '</thead>';
+
+        echo '<tbody class="cfm-repeater-items">';
+
+        // Existing rows
+        foreach ($repeater_data as $index => $row) {
+            echo '<tr class="cfm-repeater-item">';
+
+            // Sort handle
+            echo '<td class="cfm-repeater-sort">';
+            echo '<span class="cfm-drag-handle dashicons dashicons-move" title="' . __('Drag to reorder', 'custom-fields-manager') . '"></span>';
+            echo '</td>';
+
+            // Sub fields
+            foreach ($sub_fields as $sub_field) {
+                $sub_value = $row[$sub_field['name']] ?? '';
+                $sub_field_id = 'cfm-' . $field['key'] . '-' . $index . '-' . $sub_field['key'];
+                $sub_field_name = 'cfm[' . $this->fieldGroup->get_key() . '][' . esc_attr($field['name']) . '][' . $index . '][' . esc_attr($sub_field['name']) . ']';
+
+                echo '<td class="cfm-repeater-sub-field">';
+                $this->render_sub_field_input($sub_field, $sub_value, $sub_field_id, $sub_field_name);
+                echo '</td>';
+            }
+
+            // Actions
+            echo '<td class="cfm-repeater-actions">';
+            echo '<button type="button" class="button button-small cfm-table-remove-row" title="' . __('Remove', 'custom-fields-manager') . '">';
+            echo '<span class="dashicons dashicons-no"></span>';
+            echo '</button>';
+            echo '</td>';
+
+            echo '</tr>';
+        }
+
+        echo '</tbody>';
+        echo '</table>';
+
+        // Add row button
+        echo '<div class="cfm-repeater-actions-bottom">';
+        echo '<button type="button" data-field-name="' . esc_attr($field['name']) . '" class="button button-primary cfm-table-add-row">';
+        echo '<span class="dashicons dashicons-plus"></span>';
+        echo esc_html($options['button_label'] ?? __('Add Row', 'custom-fields-manager'));
+        echo '</button>';
         echo '</div>';
-        echo '</div>';
+
+        // Template for new rows
+        echo '<template id="cfm-repeater-template-' . esc_attr($field['name']) . '">';
+        echo '<tr class="cfm-repeater-item">';
+
+        // Sort handle
+        echo '<td class="cfm-repeater-sort">';
+        echo '<span class="cfm-drag-handle dashicons dashicons-move" title="' . __('Drag to reorder', 'custom-fields-manager') . '"></span>';
+        echo '</td>';
+
+        // Sub fields
+        foreach ($sub_fields as $sub_index => $sub_field) {
+            $sub_field_name = 'cfm[' . $this->fieldGroup->get_key() . '][' . esc_attr($field['name']) . '][__INDEX__][' . esc_attr($sub_field['name']) . ']';
+
+            echo '<td class="cfm-repeater-sub-field">';
+            $this->render_sub_field_input($sub_field, '', '', $sub_field_name, true);
+            echo '</td>';
+        }
+
+        // Actions
+        echo '<td class="cfm-repeater-actions">';
+        echo '<button type="button" class="cfm-table-remove-row" title="' . __('Remove', 'custom-fields-manager') . '">';
+        echo '<span class="dashicons dashicons-no"></span>';
+        echo '</button>';
+        echo '</td>';
+
+        echo '</tr>';
         echo '</template>';
 
         echo '</div>';
@@ -696,7 +709,15 @@ class CFM_Meta_Box_Handler
                 }
                 echo '</div>';
                 break;
-
+            case 'date':
+                $placeholder = !empty($options['placeholder']) ? esc_attr($options['placeholder']) : '';
+                echo '<input type="date" 
+                             ' . (!$is_template ? 'id="' . esc_attr($field_id) . '"' : '') . '
+                             name="' . $field_name . '" 
+                             value="' . esc_attr($value) . '" 
+                             class="cfm-field-input" 
+                             placeholder="' . $placeholder . '">';
+                break;
             default:
                 $placeholder = !empty($options['placeholder']) ? esc_attr($options['placeholder']) : '';
                 echo '<input type="text" 
@@ -776,37 +797,68 @@ class CFM_Meta_Box_Handler
             return;
         }
 
-        // Save regular fields
+        // Save field group data
         if (isset($_POST['cfm']) && is_array($_POST['cfm'])) {
-            foreach ($_POST['cfm'] as $field_name => $field_value) {
-                // Sanitize field value based on field type
-                $field_value = $this->sanitize_field_value($field_name, $field_value);
+            foreach ($_POST['cfm'] as $field_group_key => $field_data) {
+                // Sanitize field data
+                $sanitized_data = $this->sanitize_field_group_data($field_data);
 
                 // Handle repeater fields - filter out empty rows
-                if (is_array($field_value)) {
-                    $field_value = array_values(array_filter($field_value, function ($row) {
-                        return !empty(array_filter($row, function ($value) {
-                            return $value !== '' && $value !== null;
+                foreach ($sanitized_data as $field_name => $field_value) {
+                    if (is_array($field_value)) {
+                        $sanitized_data[$field_name] = array_values(array_filter($field_value, function ($row) {
+                            return !empty(array_filter($row, function ($value) {
+                                return $value !== '' && $value !== null;
+                            }));
                         }));
-                    }));
+                    }
                 }
 
-                if (empty($field_value)) {
-                    delete_post_meta($post_id, $field_name);
+                // Remove empty fields
+                $sanitized_data = array_filter($sanitized_data, function ($value) {
+                    return $value !== '' && $value !== null && $value !== [];
+                });
+
+                // Store all field group data in single meta field
+                $meta_key = '_cfm_' . $field_group_key;
+                
+                if (empty($sanitized_data)) {
+                    delete_post_meta($post_id, $meta_key);
                 } else {
-                    update_post_meta($post_id, $field_name, $field_value);
+                    update_post_meta($post_id, $meta_key, $sanitized_data);
                 }
             }
         }
     }
 
-    private function sanitize_field_value($field_name, $value)
+    private function sanitize_field_group_data($field_data)
     {
-        if (is_array($value)) {
-            return array_map([$this, 'sanitize_text_field'], $value);
+        $sanitized_data = [];
+
+        foreach ($field_data as $field_name => $field_value) {
+            if (is_array($field_value)) {
+                $sanitized_data[$field_name] = $this->sanitize_array_field($field_value);
+            } else {
+                $sanitized_data[$field_name] = sanitize_text_field($field_value);
+            }
         }
 
-        return sanitize_text_field($value);
+        return $sanitized_data;
+    }
+
+    private function sanitize_array_field($array_value)
+    {
+        $sanitized_array = [];
+
+        foreach ($array_value as $key => $value) {
+            if (is_array($value)) {
+                $sanitized_array[$key] = $this->sanitize_array_field($value);
+            } else {
+                $sanitized_array[$key] = sanitize_text_field($value);
+            }
+        }
+
+        return $sanitized_array;
     }
 
     public function add_custom_styles()
@@ -857,5 +909,38 @@ class CFM_Meta_Box_Handler
                 z-index: 159999 !important;
             }
         </style>';
+    }
+
+    /**
+     * Get field value from field group data
+     * 
+     * @param int $post_id Post ID
+     * @param string $field_group_key Field group key
+     * @param string $field_name Field name
+     * @return mixed Field value
+     */
+    public static function get_field_value($post_id, $field_group_key, $field_name)
+    {
+        $field_group_data = get_post_meta($post_id, '_cfm_' . $field_group_key, true);
+        
+        if (is_array($field_group_data) && isset($field_group_data[$field_name])) {
+            return $field_group_data[$field_name];
+        }
+        
+        return '';
+    }
+
+    /**
+     * Get all field group data
+     * 
+     * @param int $post_id Post ID
+     * @param string $field_group_key Field group key
+     * @return array Field group data
+     */
+    public static function get_field_group_data($post_id, $field_group_key)
+    {
+        $field_group_data = get_post_meta($post_id, '_cfm_' . $field_group_key, true);
+        
+        return is_array($field_group_data) ? $field_group_data : [];
     }
 }

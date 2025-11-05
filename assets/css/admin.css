@@ -554,9 +554,13 @@
     padding: 12px 16px;
     background: var(--cfm-bg-light);
     border-bottom: 1px solid var(--cfm-border-light);
-    cursor: move;
+    cursor: pointer;
     transition: var(--cfm-transition);
     user-select: none;
+}
+
+.cfm-field-header .cfm-field-label {
+    margin: 0;
 }
 
 .cfm-field-header:hover {

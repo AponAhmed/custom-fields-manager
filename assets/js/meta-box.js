@@ -23,6 +23,10 @@ jQuery(document).ready(function ($) {
             $(document).on('click', '.cfm-remove-repeater-row', this.removeRepeaterRow.bind(this));
             $(document).on('click', '.cfm-move-repeater-row', this.moveRepeaterRow.bind(this));
             
+            // Table repeater events
+            $(document).on('click', '.cfm-table-add-row', this.addTableRepeaterRow.bind(this));
+            $(document).on('click', '.cfm-table-remove-row', this.removeTableRepeaterRow.bind(this));
+            
             // Media events
             $(document).on('click', '.cfm-media-upload-btn', this.openMediaFrame.bind(this));
             $(document).on('click', '.cfm-media-remove-btn', this.removeMediaItem.bind(this));
@@ -42,6 +46,7 @@ jQuery(document).ready(function ($) {
             });
         }
 
+        // Original repeater methods (for non-table layout)
         addRepeaterRow(e) {
             e.preventDefault();
             const $button = $(e.target).closest('.cfm-add-repeater-row');
@@ -49,7 +54,6 @@ jQuery(document).ready(function ($) {
             const $items = $repeater.find('.cfm-repeater-items');
             const fieldName = $button.data('field-name');
             
-            // Get the template
             const templateId = `cfm-repeater-template-${fieldName}`;
             const template = document.getElementById(templateId);
             
@@ -58,7 +62,6 @@ jQuery(document).ready(function ($) {
                 return;
             }
             
-            // Clone the template content
             const templateContent = template.content.cloneNode(true);
             const $newItem = $(templateContent).find('.cfm-repeater-item').first();
             
@@ -66,7 +69,6 @@ jQuery(document).ready(function ($) {
                 $items.append($newItem);
                 this.updateRepeaterIndexes($repeater);
                 
-                // Add animation class
                 $newItem.addClass('cfm-field-enter');
                 setTimeout(() => {
                     $newItem.removeClass('cfm-field-enter');
@@ -88,13 +90,85 @@ jQuery(document).ready(function ($) {
             }, 300);
         }
 
+        // Table repeater methods
+        addTableRepeaterRow(e) {
+            e.preventDefault();
+            const $button = $(e.target).closest('.cfm-table-add-row');
+            const $repeater = $button.closest('.cfm-repeater-field');
+            const $tbody = $repeater.find('.cfm-repeater-table tbody');
+            const fieldName = $button.data('field-name');
+            
+            const templateId = `cfm-repeater-template-${fieldName}`;
+            const template = document.getElementById(templateId);
+            
+            if (!template) {
+                console.error(`Template not found: ${templateId}`);
+                return;
+            }
+            
+            const templateContent = template.content.cloneNode(true);
+            const $newRow = $(templateContent).find('.cfm-repeater-item').first();
+            
+            if ($newRow.length) {
+                $tbody.append($newRow);
+                this.updateTableRepeaterIndexes($repeater);
+                
+                $newRow.addClass('cfm-field-enter');
+                setTimeout(() => {
+                    $newRow.removeClass('cfm-field-enter');
+                }, 300);
+            }
+        }
+
+        removeTableRepeaterRow(e) {
+            e.preventDefault();
+            const $button = $(e.target).closest('.cfm-table-remove-row');
+            const $row = $button.closest('.cfm-repeater-item');
+            const $repeater = $row.closest('.cfm-repeater-field');
+            
+            $row.addClass('cfm-field-exit');
+            
+            setTimeout(() => {
+                $row.remove();
+                this.updateTableRepeaterIndexes($repeater);
+            }, 300);
+        }
+
+        updateRepeaterIndexes($repeater) {
+            $repeater.find('.cfm-repeater-item').each(function (index) {
+                const $item = $(this);
+                $item.find('.cfm-repeater-item-title').text(cfmMetaBox.i18n.row + ' ' + (index + 1));
+                
+                $item.find('[name]').each(function () {
+                    const $input = $(this);
+                    const currentName = $input.attr('name');
+                    
+                    const newName = currentName.replace(/\[(\d+)\]/g, `[${index}]`);
+                    $input.attr('name', newName);
+                });
+            });
+        }
+
+        updateTableRepeaterIndexes($repeater) {
+            $repeater.find('.cfm-repeater-item').each(function (index) {
+                const $row = $(this);
+                
+                $row.find('[name]').each(function () {
+                    const $input = $(this);
+                    const currentName = $input.attr('name');
+                    
+                    const newName = currentName.replace(/\[(\d+)\]/g, `[${index}]`);
+                    $input.attr('name', newName);
+                });
+            });
+        }
+
         moveRepeaterRow(e) {
             e.preventDefault();
             const $button = $(e.target).closest('.cfm-move-repeater-row');
             const $item = $button.closest('.cfm-repeater-item');
             const $repeater = $item.closest('.cfm-repeater-field');
             
-            // Simple move up/down functionality
             if ($button.hasClass('move-up')) {
                 $item.prev('.cfm-repeater-item').before($item);
             } else if ($button.hasClass('move-down')) {
@@ -104,24 +178,8 @@ jQuery(document).ready(function ($) {
             this.updateRepeaterIndexes($repeater);
         }
 
-        updateRepeaterIndexes($repeater) {
-            $repeater.find('.cfm-repeater-item').each(function (index) {
-                const $item = $(this);
-                $item.find('.cfm-repeater-item-title').text(cfmMetaBox.i18n.row + ' ' + (index + 1));
-                
-                // Update all input names with new index
-                $item.find('[name]').each(function () {
-                    const $input = $(this);
-                    const currentName = $input.attr('name');
-                    
-                    // Replace the index in the name attribute
-                    const newName = currentName.replace(/\[(\d+)\]/g, `[${index}]`);
-                    $input.attr('name', newName);
-                });
-            });
-        }
-
         initSortable() {
+            // Original repeater sortable
             $('.cfm-repeater-items').sortable({
                 handle: '.cfm-move-repeater-row',
                 placeholder: 'cfm-repeater-placeholder',
@@ -129,6 +187,18 @@ jQuery(document).ready(function ($) {
                 update: (event, ui) => {
                     const $repeater = ui.item.closest('.cfm-repeater-field');
                     this.updateRepeaterIndexes($repeater);
+                }
+            });
+
+            // Table repeater sortable
+            $('.cfm-repeater-table tbody').sortable({
+                handle: '.cfm-drag-handle',
+                axis: 'y',
+                placeholder: 'cfm-repeater-table-placeholder',
+                forcePlaceholderSize: true,
+                update: (event, ui) => {
+                    const $repeater = ui.item.closest('.cfm-repeater-field');
+                    this.updateTableRepeaterIndexes($repeater);
                 }
             });
         }
@@ -144,7 +214,6 @@ jQuery(document).ready(function ($) {
             const $wrapper = $button.closest('.cfm-media-upload-wrapper');
             const isMultiple = $wrapper.data('multiple') === 'multiple';
 
-            // Create media frame if it doesn't exist
             if (!this.mediaFrame) {
                 this.mediaFrame = wp.media({
                     title: cfmMetaBox.media_frame_title,
@@ -173,13 +242,11 @@ jQuery(document).ready(function ($) {
             const $preview = $wrapper.find('.cfm-media-preview');
 
             if (!isMultiple) {
-                // Single file selection
                 const attachment = selection.first();
                 const url = attachment.get('url');
                 $hiddenInput.val(url);
                 this.renderMediaPreview(url, this.currentMediaField, $preview);
             } else {
-                // Multiple file selection
                 const currentValues = $hiddenInput.val() ? $hiddenInput.val().split(',') : [];
                 const newValues = [];
 
@@ -203,12 +270,10 @@ jQuery(document).ready(function ($) {
                 $previewContainer.insertAfter($(`[data-field-id="${fieldId}"]`).find('.cfm-media-upload-controls'));
             }
 
-            // Check if preview already exists
             if ($previewContainer.find(`[data-url="${url}"]`).length) {
                 return;
             }
 
-            // Create preview item
             const previewItem = `
                 <div class="cfm-media-preview-item" data-url="${url}">
                     <div class="cfm-media-loading">Loading...</div>
@@ -216,7 +281,6 @@ jQuery(document).ready(function ($) {
             `;
             $previewContainer.append(previewItem);
 
-            // Determine file type and render appropriate preview
             $.ajax({
                 url: cfmMetaBox.ajaxurl,
                 type: 'POST',
@@ -277,7 +341,6 @@ jQuery(document).ready(function ($) {
             const isMultiple = $wrapper.data('multiple') === 'multiple';
 
             if (isMultiple) {
-                // Remove from comma-separated list
                 const currentValues = $hiddenInput.val() ? $hiddenInput.val().split(',') : [];
                 const newValues = currentValues.filter(val => val !== urlToRemove);
                 $hiddenInput.val(newValues.join(','));
@@ -285,10 +348,8 @@ jQuery(document).ready(function ($) {
                 $hiddenInput.val('');
             }
 
-            // Remove preview
             $(`[data-field-id="${fieldId}"] .cfm-media-preview-item[data-url="${urlToRemove}"]`).remove();
 
-            // Hide preview container if empty
             const $preview = $(`[data-field-id="${fieldId}"] .cfm-media-preview`);
             if ($preview.children().length === 0) {
                 $preview.remove();
@@ -342,8 +403,7 @@ jQuery(document).ready(function ($) {
         extractAttachmentId(url) {
             const match = url.match(/wp-content\/uploads\/(\d{4}\/\d{2}\/)?([^\/]+)$/);
             if (match) {
-                // Try to find attachment by URL
-                return null; // Let PHP handle URL to ID conversion
+                return null;
             }
             return null;
         }

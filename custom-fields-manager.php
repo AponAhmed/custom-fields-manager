@@ -31,6 +31,7 @@ function cfm_load_classes()
     }
 
     $classes = [
+        'Gutenberg_WYSIWYG',
         'Database',
         'Field_Group',
         'Field_Group_Repository',
